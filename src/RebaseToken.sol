@@ -59,6 +59,8 @@ uint256 private constant PRECISION_FACTOR = 1e18;
         uint256 totalBalanceWithInterest = balanceOf(user);
         uint256 interestToMint = totalBalanceWithInterest - principalBalance;
 
+        _mint( user, interestToMint);
+
         s_userLastUpdatedAtTimestamp[user] = block.timestamp;
     }
 
@@ -66,5 +68,44 @@ uint256 private constant PRECISION_FACTOR = 1e18;
         _mintAccruedInterest(_to);
         s_userInterestRate[_to] = s_intrestRate;
         _mint(_to, _amount);
+    }
+
+    function burn(address _from,uint256 _amount) external{
+        if(_amount==type(uint256).max){
+        _amount=balanceOf(_from);
+        }
+           _mintAccruedInterest(_from);
+        _burn(_from, _amount);
+    }
+
+
+    function transfer(address recipient,uint256 _amount) public override returns (bool) {
+       _mintAccruedInterest(msg.sender);
+       _mintAccruedInterest(recipient);
+       if(_amount==type(uint256).max){
+        _amount=balanceOf(msg.sender);
+       }
+       if(balanceOf(recipient)==0){
+        s_userInterestRate[recipient]=s_userInterestRate[msg.sender];
+       }
+
+       return super.transfer(recipient,_amount);
+    }
+
+      function transferFrom(address _sender, address _recipient, uint256 _amount) public override returns (bool) {
+        if (_amount == type(uint256).max) {
+            _amount = balanceOf(_sender);
+        }
+        
+        _mintAccruedInterest(_sender);
+        _mintAccruedInterest(_recipient);
+        if (balanceOf(_recipient) == 0) {
+            s_userInterestRate[_recipient] = s_userInterestRate[_sender];
+        }
+        return super.transferFrom(_sender, _recipient, _amount);
+    }
+
+    function getuserIntrestRate(address user) public view returns(uint256){
+      return  s_userInterestRate[user];
     }
 }
