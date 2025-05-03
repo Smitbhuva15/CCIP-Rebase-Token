@@ -70,6 +70,8 @@ uint256 private constant PRECISION_FACTOR = 1e18;
         _mint(_to, _amount);
     }
 
+    
+
     function burn(address _from,uint256 _amount) external{
         if(_amount==type(uint256).max){
         _amount=balanceOf(_from);
