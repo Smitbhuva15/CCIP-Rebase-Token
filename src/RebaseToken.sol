@@ -3,10 +3,12 @@
 pragma solidity ^0.8.18;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract RebaseToken is ERC20, Ownable  {
+contract RebaseToken is ERC20, Ownable, AccessControl {
     uint256 private s_intrestRate = 5e10;
-uint256 private constant PRECISION_FACTOR = 1e18;
+    uint256 private constant PRECISION_FACTOR = 1e18;
+    bytes32 private constant MINT_AND_BURN_ROLE=keccak256(" MINT_AND_BURN_ROLE")
     mapping(address => uint256) public s_userInterestRate;
     mapping(address => uint256) public s_userLastUpdatedAtTimestamp;
 
@@ -16,8 +18,15 @@ uint256 private constant PRECISION_FACTOR = 1e18;
         uint256 proposedInterestRate
     );
 
-    constructor() ERC20("Rebase Token", "RBT") Ownable(msg.sender) {}
+    constructor() ERC20("Rebase Token", "RBT") Ownable(msg.sender) {
+         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+   
+    function grantMintAndBurnRole(address _account) external onlyOwner{
+         _grantRole(MINT_AND_BURN_ROLE, msg.sender);
+    } 
 
+ 
     function setIntrest(uint256 newInterestRate) external onlyOwner{
         if (newInterestRate < s_intrestRate) {
             revert RebaseToken__InterestRateCanOnlyIncrease(
@@ -65,7 +74,7 @@ uint256 private constant PRECISION_FACTOR = 1e18;
         s_userLastUpdatedAtTimestamp[user] = block.timestamp;
     }
 
-    function mint(address _to, uint256 _amount) external {
+    function mint(address _to, uint256 _amount) external onlyRole( MINT_AND_BURN_ROLE){
         _mintAccruedInterest(_to);
         s_userInterestRate[_to] = s_intrestRate;
         _mint(_to, _amount);
@@ -73,7 +82,7 @@ uint256 private constant PRECISION_FACTOR = 1e18;
 
     
 
-    function burn(address _from,uint256 _amount) external{
+    function burn(address _from,uint256 _amount) external onlyRole( MINT_AND_BURN_ROLE){
         if(_amount==type(uint256).max){
         _amount=balanceOf(_from);
         }
