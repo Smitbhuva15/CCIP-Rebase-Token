@@ -2,8 +2,9 @@
 
 pragma solidity ^0.8.18;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RebaseToken is ERC20 {
+contract RebaseToken is ERC20, Ownable  {
     uint256 private s_intrestRate = 5e10;
 uint256 private constant PRECISION_FACTOR = 1e18;
     mapping(address => uint256) public s_userInterestRate;
@@ -15,9 +16,9 @@ uint256 private constant PRECISION_FACTOR = 1e18;
         uint256 proposedInterestRate
     );
 
-    constructor() ERC20("Rebase Token", "RBT") {}
+    constructor() ERC20("Rebase Token", "RBT") Ownable(msg.sender) {}
 
-    function setIntrest(uint256 newInterestRate) external {
+    function setIntrest(uint256 newInterestRate) external onlyOwner{
         if (newInterestRate < s_intrestRate) {
             revert RebaseToken__InterestRateCanOnlyIncrease(
                 s_intrestRate,
