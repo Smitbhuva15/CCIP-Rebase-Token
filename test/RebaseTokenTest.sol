@@ -15,14 +15,14 @@ contract RebaseTokenTest is Test {
     address public owner = makeAddr("owner");
     address public user = makeAddr("user");
 
-    function SetUp() external {
+    function setUp() external {
 
          vm.startPrank(owner);
         rebaseToken = new RebaseToken();
         valut = new Valut(address(rebaseToken));
         rebaseToken.grantMintAndBurnRole(address(valut));
 
-        // (bool success,)=payable(address(valut)).call{value:1e18}("");
+        (bool success,)=payable(address(valut)).call{value:1e18}("");
 
         vm.stopPrank();
     }
@@ -33,6 +33,22 @@ contract RebaseTokenTest is Test {
 
         vm.startPrank(user);
         vm.deal(user, amount);
+
+        valut.deposite{value:amount}();
+
+        uint256 initialBalance=rebaseToken.balanceOf(user);
+        assertEq(initialBalance,amount);
+
+        vm.warp(block.timestamp+1 hours);
+          uint256 middleBalance =rebaseToken.balanceOf(user);
+          assertGe(middleBalance, initialBalance);
+
+          
+        vm.warp(block.timestamp+1 hours);
+          uint256 secondBalance =rebaseToken.balanceOf(user);
+          assertGe(secondBalance, middleBalance);
+
+          assert(secondBalance-middleBalance==middleBalance-initialBalance);
 
         vm.stopPrank();
 
